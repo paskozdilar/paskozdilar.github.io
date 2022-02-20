@@ -1,1 +1,0 @@
-# paskozdilar.github.io
