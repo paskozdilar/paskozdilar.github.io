@@ -1,14 +1,62 @@
 body {
-  color: rgb(206, 202, 195);
-  background-color: rgb(24, 26, 27);
-  font: "MetalMania";
+    margin: auto;
+    max-width: 50vw;
+    color: rgb(206, 202, 195);
+    /*background-color: rgb(24, 26, 27);*/
+    background-color: black;
+    font-family: "MetalMania";
 }
 
 h1 {
-  position: center
+    font-size: 3vw;
+    text-align: center;
+}
+
+ul {
+    font-size: 2vw;
+    text-align: center;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+li {
+    display: inline;
+}
+
+li:last-child {
+    border-right: none;
+}
+
+li a {
+    display: inline-block;
+    padding: 8px;
+    background-color: darkgrey;
+    border-radius: 2vw;
+    width: 10vw;
+    color: black;
+    
+}
+
+a:link {
+    text-decoration: none;
+}
+
+a:visited {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.active {
+    text-decoration: underline;
+    background-color: lightgrey;
 }
 
 @font-face {
     font-family: "MetalMania";
-    src: url("MetalMania-Regular.ttf");
+    src: url("MetalMania-Regular.ttf") format("truetype");
 }
