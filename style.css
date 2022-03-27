@@ -1,20 +1,37 @@
 body {
     margin: auto;
-    max-width: 720px;
+    max-width: 900px;
     color: rgb(206, 202, 195);
     background-color: rgb(24, 26, 27);
+    line-height: 1.6;
+}
+
+h1 {
+    margin: auto;
+    text-align: center;
+}
+
+.content {
+    line-height: 1.6;
+    margin: 20px 0 0 0;
+    padding: 10px 40px 40px 40px;
+    font-family: "Ubuntu";
+    font-size: 22px;
+    background-color: rgb(50, 50, 50);
+}
+
+.center {
     font-family: "MetalMania";
     font-size: 25px;
 }
 
-h1 {
-    margin: 20px;
-    font-size: 75px;
-    text-align: center;
+.navigation {
+    font-family: "MetalMania";
+    font-size: 25px;
 }
 
 .navigation ul {
-    font-size: 50px;
+    font-size: 40px;
     text-align: center;
     list-style-type: none;
     margin: 0;
@@ -32,9 +49,9 @@ h1 {
 
 .navigation li a {
     display: inline-block;
-    padding: 0px 20px 0px 20px;
+    padding: 0 20px 0 20px;
     background-color: darkgrey;
-    border-radius: 40px;
+   /* border-radius: 20px;*/
     width: 100px;
     color: black;
     
@@ -42,14 +59,17 @@ h1 {
 
 a:link {
     text-decoration: none;
+    color: red;
 }
 
 a:visited {
     text-decoration: none;
+    color: darkred;
 }
 
 a:hover {
     text-decoration: underline;
+    color: darkred;
 }
 
 .navigation li a.active {
@@ -59,4 +79,13 @@ a:hover {
 @font-face {
     font-family: "MetalMania";
     src: url("MetalMania-Regular.ttf") format("truetype");
+}
+
+.picture {
+    width: 100%;
+    height: auto;
+}
+
+.center {
+    text-align: center;
 }
