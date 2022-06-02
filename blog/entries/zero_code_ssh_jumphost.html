@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Structure In A Void</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="shortcut icon" href="../../favicon.ico">
+</head>
+
+<body>
+    <div class="center">
+        <h1>Structure In A Void</h1>
+    </div>
+    <div class="navigation">
+        <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../index.html">Blog</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h2>Zero-code Reverse SSH Jumphost</h2>
+        <!--
+            Q:  What am I trying to communicate?
+            A:  I'm trying to show people how to create a zero-code SSH jumphost and
+                explain its usefulness.
+
+            Q:  What is an reverse SSH jumphost?
+            A:  Reverse SSH jumphost is a server from which we connect 
+
+            Q:  How to create zero-code SSH jumphost?
+            A:  - obtain server with public IP address
+                - create user
+                - create key
+                - disable shell for user in sshd_config
+                - enable socket overwriting in sshd_config
+                - set server-alive-interval and disconnect-on-forward-failure
+                - write systemd unit file for client devices and set hostnames
+                - connect to client devices
+        -->
+        <h3>Introduction</h3>
+        <p>
+            SSH (Secure Shell Protocol) is a widely-used protocol for securely accessing a remote shell.
+        </p>
+        <p>
+            In order for client to connect to an SSH server, the server's TCP port 22 must be directly reachable by the
+            client.
+        </p>
+        <p>
+            Unfortunately, due to widespread use of NAT (Network Address Translation), most computers connected to the
+            internet do not have a publicly-reachable IP address. The simplest way to overcome this limitation is to use
+            a single SSH server with a publicly-reachable IP address and use it as a reverse-jumphost for connecting to
+            all other hosts behind NAT: </p>
+        <svg width="281pt" height="218pt" viewBox="0.00 0.00 280.69 218.00" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink" style="padding: auto;">
+            <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 214)">
+                <title>Jumphost</title>
+                <polygon fill="white" stroke="transparent" points="-4,4 -4,-214 276.69,-214 276.69,4 -4,4" />
+                <!-- Jumphost -->
+                <g id="node1" class="node">
+                    <title>Jumphost</title>
+                    <ellipse fill="none" stroke="black" cx="139.35" cy="-105" rx="54.69" ry="18" />
+                    <text text-anchor="middle" x="139.35" y="-101.3" font-family="Times,serif"
+                        font-size="14.00">Jumphost</text>
+                </g>
+                <!-- Client -->
+                <g id="node2" class="node">
+                    <title>Client</title>
+                    <ellipse fill="none" stroke="black" cx="139.35" cy="-18" rx="38.19" ry="18" />
+                    <text text-anchor="middle" x="139.35" y="-14.3" font-family="Times,serif"
+                        font-size="14.00">Client</text>
+                </g>
+                <!-- Jumphost -> Client -->
+                <g id="edge4" class="edge">
+                    <title>Jumphost -> Client</title>
+                    <path fill="none" stroke="black" stroke-dasharray="5,2"
+                        d="M139.35,-76.73C139.35,-63.42 139.35,-47.81 139.35,-36.18" />
+                    <polygon fill="black" stroke="black" points="135.85,-76.8 139.35,-86.8 142.85,-76.8 135.85,-76.8" />
+                    <text text-anchor="middle" x="159.35" y="-57.8" font-family="Times,serif"
+                        font-size="14.00">host2</text>
+                </g>
+                <!-- Host2 -->
+                <g id="node4" class="node">
+                    <title>Host2</title>
+                    <ellipse fill="none" stroke="black" cx="38.35" cy="-192" rx="38.19" ry="18" />
+                    <text text-anchor="middle" x="38.35" y="-188.3" font-family="Times,serif"
+                        font-size="14.00">Host2</text>
+                </g>
+                <!-- Jumphost -> Host2 -->
+                <g id="edge5" class="edge">
+                    <title>Jumphost -> Host2</title>
+                    <path fill="none" stroke="black" stroke-dasharray="5,2"
+                        d="M111.83,-120.65C102.08,-126.4 91.32,-133.45 82.35,-141 73.37,-148.56 64.59,-157.99 57.26,-166.62" />
+                    <polygon fill="black" stroke="black"
+                        points="54.38,-164.61 50.73,-174.56 59.78,-169.06 54.38,-164.61" />
+                    <text text-anchor="middle" x="108.85" y="-144.8" font-family="Times,serif" font-size="14.00">port
+                        22</text>
+                </g>
+                <!-- Host1 -->
+                <g id="node3" class="node">
+                    <title>Host1</title>
+                    <ellipse fill="none" stroke="black" cx="139.35" cy="-192" rx="38.19" ry="18" />
+                    <text text-anchor="middle" x="139.35" y="-188.3" font-family="Times,serif"
+                        font-size="14.00">Host1</text>
+                </g>
+                <!-- Host1 -> Jumphost -->
+                <g id="edge1" class="edge">
+                    <title>Host1 -> Jumphost</title>
+                    <path fill="none" stroke="black" d="M139.35,-173.8C139.35,-162.16 139.35,-146.55 139.35,-133.24" />
+                    <polygon fill="black" stroke="black"
+                        points="142.85,-133.18 139.35,-123.18 135.85,-133.18 142.85,-133.18" />
+                </g>
+                <!-- Host2 -> Jumphost -->
+                <g id="edge2" class="edge">
+                    <title>Host2 -> Jumphost</title>
+                    <path fill="none" stroke="black"
+                        d="M39.36,-173.89C40.83,-163.27 44.29,-150 52.35,-141 61.01,-131.34 72.7,-124.3 84.71,-119.19" />
+                    <polygon fill="black" stroke="black"
+                        points="86.27,-122.34 94.36,-115.49 83.77,-115.8 86.27,-122.34" />
+                </g>
+                <!-- Host3 -->
+                <g id="node5" class="node">
+                    <title>Host3</title>
+                    <ellipse fill="none" stroke="black" cx="234.35" cy="-192" rx="38.19" ry="18" />
+                    <text text-anchor="middle" x="234.35" y="-188.3" font-family="Times,serif"
+                        font-size="14.00">Host3</text>
+                </g>
+                <!-- Host3 -> Jumphost -->
+                <g id="edge3" class="edge">
+                    <title>Host3 -> Jumphost</title>
+                    <path fill="none" stroke="black" d="M217.36,-175.8C202.87,-162.84 181.8,-143.99 165.21,-129.14" />
+                    <polygon fill="black" stroke="black"
+                        points="167.26,-126.28 157.48,-122.22 162.6,-131.5 167.26,-126.28" />
+                </g>
+            </g>
+        </svg>
+        <h3>Overview</h3>
+        <p>
+            SSH has a cool feature - it can forward connections from a UNIX socket on one host to a TCP socket on
+            another.
+        </p>
+        <p>
+            Since all we need to connect to an SSH server is access to TCP port 22, this feature will be the building
+            block for our reverse SSH jumphost - since UNIX sockets are just files on the filesystem, we can create a
+            new UNIX socket for each host we want to access through the jumphost. If we name each socket by the hostname
+            of the host it connects to, we will have a convenient way to connect to hosts by their hostname:
+        </p>
+        <svg width="388pt" height="265pt" viewBox="0.00 0.00 387.69 265.00" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink">
+            <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 261)">
+                <title>jumphost_detailed</title>
+                <polygon fill="white" stroke="transparent" points="-4,4 -4,-261 383.69,-261 383.69,4 -4,4" />
+                <g id="clust1" class="cluster">
+                    <title>cluster_host_1</title>
+                    <polygon fill="lightgrey" stroke="black"
+                        points="252.69,-174 252.69,-249 371.69,-249 371.69,-174 252.69,-174" />
+                    <text text-anchor="middle" x="312.19" y="-233.8" font-family="Times,serif"
+                        font-size="14.00">Host1</text>
+                </g>
+                <g id="clust2" class="cluster">
+                    <title>cluster_host_2</title>
+                    <polygon fill="lightgrey" stroke="black"
+                        points="252.69,-91 252.69,-166 371.69,-166 371.69,-91 252.69,-91" />
+                    <text text-anchor="middle" x="312.19" y="-150.8" font-family="Times,serif"
+                        font-size="14.00">Host2</text>
+                </g>
+                <g id="clust3" class="cluster">
+                    <title>cluster_host_3</title>
+                    <polygon fill="lightgrey" stroke="black"
+                        points="252.69,-8 252.69,-83 371.69,-83 371.69,-8 252.69,-8" />
+                    <text text-anchor="middle" x="312.19" y="-67.8" font-family="Times,serif"
+                        font-size="14.00">Host3</text>
+                </g>
+                <g id="clust4" class="cluster">
+                    <title>cluster_jumphost</title>
+                    <polygon fill="lightgrey" stroke="black"
+                        points="104.69,-37 104.69,-220 232.69,-220 232.69,-37 104.69,-37" />
+                    <text text-anchor="middle" x="168.69" y="-204.8" font-family="Times,serif"
+                        font-size="14.00">Jumphost</text>
+                </g>
+                <!-- Host1_Port22 -->
+                <g id="node1" class="node">
+                    <title>Host1_Port22</title>
+                    <polygon fill="none" stroke="black"
+                        points="363.69,-218 260.69,-218 260.69,-182 363.69,-182 363.69,-218" />
+                    <text text-anchor="middle" x="312.19" y="-196.3" font-family="Times,serif" font-size="14.00">TCP
+                        port 22</text>
+                </g>
+                <!-- Host2_Port22 -->
+                <g id="node2" class="node">
+                    <title>Host2_Port22</title>
+                    <polygon fill="none" stroke="black"
+                        points="363.69,-135 260.69,-135 260.69,-99 363.69,-99 363.69,-135" />
+                    <text text-anchor="middle" x="312.19" y="-113.3" font-family="Times,serif" font-size="14.00">TCP
+                        port 22</text>
+                </g>
+                <!-- Host3_Port22 -->
+                <g id="node3" class="node">
+                    <title>Host3_Port22</title>
+                    <polygon fill="none" stroke="black"
+                        points="363.69,-52 260.69,-52 260.69,-16 363.69,-16 363.69,-52" />
+                    <text text-anchor="middle" x="312.19" y="-30.3" font-family="Times,serif" font-size="14.00">TCP port
+                        22</text>
+                </g>
+                <!-- Host1_UnixSocket -->
+                <g id="node4" class="node">
+                    <title>Host1_UnixSocket</title>
+                    <polygon fill="none" stroke="black"
+                        points="224.69,-189 112.69,-189 112.69,-153 224.69,-153 224.69,-189" />
+                    <text text-anchor="middle" x="168.69" y="-167.3" font-family="Times,serif"
+                        font-size="14.00">~/Host1.sock</text>
+                </g>
+                <!-- Host1_UnixSocket -> Host1_Port22 -->
+                <g id="edge1" class="edge">
+                    <title>Host1_UnixSocket -> Host1_Port22</title>
+                    <path fill="none" stroke="black" d="M224.81,-182.3C233.28,-184.03 242.08,-185.83 250.66,-187.59" />
+                    <polygon fill="black" stroke="black"
+                        points="250.12,-191.06 260.62,-189.64 251.53,-184.2 250.12,-191.06" />
+                </g>
+                <!-- Host2_UnixSocket -->
+                <g id="node5" class="node">
+                    <title>Host2_UnixSocket</title>
+                    <polygon fill="none" stroke="black"
+                        points="224.69,-135 112.69,-135 112.69,-99 224.69,-99 224.69,-135" />
+                    <text text-anchor="middle" x="168.69" y="-113.3" font-family="Times,serif"
+                        font-size="14.00">~/Host2.sock</text>
+                </g>
+                <!-- Host2_UnixSocket -> Host2_Port22 -->
+                <g id="edge2" class="edge">
+                    <title>Host2_UnixSocket -> Host2_Port22</title>
+                    <path fill="none" stroke="black" d="M224.81,-117C233.19,-117 241.89,-117 250.38,-117" />
+                    <polygon fill="black" stroke="black"
+                        points="250.62,-120.5 260.62,-117 250.62,-113.5 250.62,-120.5" />
+                </g>
+                <!-- Host3_UnixSocket -->
+                <g id="node6" class="node">
+                    <title>Host3_UnixSocket</title>
+                    <polygon fill="none" stroke="black"
+                        points="224.69,-81 112.69,-81 112.69,-45 224.69,-45 224.69,-81" />
+                    <text text-anchor="middle" x="168.69" y="-59.3" font-family="Times,serif"
+                        font-size="14.00">~/Host3.sock</text>
+                </g>
+                <!-- Host3_UnixSocket -> Host3_Port22 -->
+                <g id="edge3" class="edge">
+                    <title>Host3_UnixSocket -> Host3_Port22</title>
+                    <path fill="none" stroke="black" d="M224.81,-51.7C233.28,-49.97 242.08,-48.17 250.66,-46.41" />
+                    <polygon fill="black" stroke="black"
+                        points="251.53,-49.8 260.62,-44.36 250.12,-42.94 251.53,-49.8" />
+                </g>
+                <!-- Client -->
+                <g id="node7" class="node">
+                    <title>Client</title>
+                    <ellipse fill="none" stroke="black" cx="38.35" cy="-117" rx="38.19" ry="18" />
+                    <text text-anchor="middle" x="38.35" y="-113.3" font-family="Times,serif"
+                        font-size="14.00">Client</text>
+                </g>
+                <!-- Client -> Host2_UnixSocket -->
+                <g id="edge4" class="edge">
+                    <title>Client -> Host2_UnixSocket</title>
+                    <path fill="none" stroke="black" d="M76.81,-117C84.79,-117 93.44,-117 102.12,-117" />
+                    <polygon fill="black" stroke="black"
+                        points="102.29,-120.5 112.29,-117 102.29,-113.5 102.29,-120.5" />
+                </g>
+            </g>
+        </svg>
+        <p>
+            Another cool feature of SSH is ProxyCommand - the argument of this option will be used as a command to
+            connect to the server. An excerpt from the manpage:
+        </p>
+        <p class="code">
+            <code>
+                [...] The command can be basically anything, and should read from its standard input and write to its
+                standard output. It should eventually connect an sshd server running on some machine. [...]<br>
+            </code>
+        </p>
+        <p>
+            Since each connected host forwards connections from its UNIX socket to its TCP port 22, we can use
+            netcat (<code>nc -U /path/to/socket</code>) as ProxyCommand to connect to the host.
+        </p>
+        <h3>Server configuration</h3>
+        <p>
+            Setting up reverse jumphost on our SSH server requires the following steps:
+        </p>
+        <ol>
+            <li>Install netcat</li>
+            <li>Create a new "host" user</li>
+            <li>Copy <code>authorized_keys</code> file to <code>/home/host/.ssh/</code> directory</li>
+            <li>Configure SSH server for "host" user:
+                <ul>
+                    <li>Disable password login (<code>PasswordAuthentication=no</code>)</li>
+                    <li>Allow clients to overwrite UNIX sockets (<code>StreamLocalBindUnlink=yes</code>)</li>
+                    <li>Allow anyone to connect to the UNIX sockets (<code>StreamLocalBindMask=0111</code>)</li>
+                </ul>
+            </li>
+        </ol>
+        <p>
+            The configuration that should be put in <code>/etc/ssh/sshd_config</code> is the following:
+        </p>
+        <p class="code">
+            <code>
+                Match User host<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;PasswordAuthentication no<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;StreamLocalBindUnlink yes<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;StreamLocalBindMask 0111<br>
+            </code>
+        </p>
+        <p>
+            Shell commands are provided below:
+        </p>
+        <p class="code">
+            <code>
+                # Install "netcat" package (assuming Debian-based distribution)<br>
+                sudo apt-get -y install netcat<br>
+                <br>
+                # Create a new "host" user with disabled password login<br>
+                sudo adduser --disabled-password host<br>
+                <br>
+                # Copy authorized_keys file to "host" user to allow client login<br>
+                sudo -u host mkdir -p /home/host/.ssh<br>
+                cat .ssh/authorized_keys | sudo -u host tee /home/host/.ssh/authorized_keys<br>
+                <br>
+                # Append configuration to /etc/ssh/sshd_config<br>
+                printf 'Match User host\n\tPasswordAuthentication
+                no\n\tStreamLocalBindUnlink true\n\tStreamLocalBindMask 0111\n' | sudo tee -a /etc/ssh/sshd_config<br>
+                <br>
+                # Restart SSH server<br>
+                sudo systemctl restart ssh<br>
+            </code>
+        </p>
+        <h3>Host configuration</h3>
+        <p>
+            In order to be accesible through the server, each host must forward connections from a UNIX socket on the
+            server to its own TCP port 22. In order for the connection to be persistent, we can write a systemd service.
+        </p>
+        <p>
+            For convenience, we can use the hostname of a host as a UNIX socket identificator.
+        </p>
+        <p>
+            Setting up persistent host tunnel requires the following steps:
+        </p>
+        <ol>
+            <li>Authorize host SSH key with server "host" account</li>
+            <li>Write a systemd service which:
+                <ul>
+                    <li>Restarts on every failure (<code>Restart=always</code>) with 5 second timeout
+                        (<code>RestartSec=5</code>)</li>
+                    <li>Does not rate-limit - we expect network interruptions (<code>StartLimitIntervalSec=0</code>)
+                    </li>
+                    <li>Runs as the user whose public key we have authorized on the server</li>
+                    <li>Runs an SSH command which:
+                        <ul>
+                            <li>Connects to server "server" without opening an interactive session (<code>-N</code>)
+                            </li>
+                            <li>Forwards TCP connections from UNIX socket on server to its own TCP port 22 (<code>-R
+                                    /home/host/HOSTNAME.sock:localhost:22</code>)</li>
+                            <li>Disconnect on socket forwarding failure (<code>-o ExitOnForwardFailure=true</code>)</li>
+                            <li>Check connection every 10 seconds (<code>-o ServerAliveInterval=10</code>)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ol>
+        <p>
+            For the step 1. we need to copy host's SSH public key (.pub file) to the client machine (the one that can
+            access the server) in order to authorize the host's public key with server's "host" user.
+        </p>
+        <p>
+            Assuming the host public key is copied to a client's working directory (<code>./id_rsa.pub</code>), the
+            shell command for step 1. is the following (<strong>NOTE:</strong> this needs to be executed on the
+            <strong>client</strong> machine):
+        </p>
+        <p class="code">
+            <code>
+                # Force-authorize new key for the user "host" on the server "SERVER"<br>
+                ssh-copy-id -f -i ./id_rsa.pub host@SERVER<br>
+            </code>
+        </p>
+        <p>
+            <strong>NOTE:</strong> Replace the "SERVER" with your server hostname or address.
+        </p>
+        <p>
+            For step 2. we need to write a systemd unit file.
+            The configuration for the unit file is the following:
+        </p>
+        <p class="code">
+            <code>
+                [Unit]<br>
+                Description=Run reverse SSH jumphost<br>
+                StartLimitIntervalSec=0<br>
+                <br>
+                [Service]<br>
+                User=USERNAME<br>
+                Restart=always<br>
+                RestartSec=5<br>
+                ExecStart=/usr/bin/ssh -N -R /home/host/HOSTNAME.sock:localhost:22 -o ExitOnForwardFailure=true -o
+                ServerAliveInterval=10 host@SERVER<br>
+                <br>
+                [Install]<br>
+                WantedBy=multi-user.target<br>
+            </code>
+        </p>
+        <p>
+            <strong>NOTE:</strong> Replace the "USERNAME" with the appropriate username of the host, "HOSTNAME" with the
+            appropriate hostname of the host, and "SERVER" with your server hostname or address.
+        </p>
+        <p>
+            To enable the systemd service, write the above configuration to
+            <code>/etc/systemd/system/reverse-jumphost.service</code> on the <strong>host</strong> machine, then
+            execute:
+        </p>
+        <p class="code">
+            <code>
+                # Reload configuration files<br>
+                sudo systemctl daemon-reload<br>
+                <br>
+                # Start reverse-jumphost service<br>
+                sudo systemctl start reverse-jumphost.service<br>
+                <br>
+                # Enable reverse-jumphost service to run on reboot<br>
+                sudo systemctl enable reverse-jumphost.service<br>
+            </code>
+        </p>
+        <h3>Client configuration</h3>
+        <p>
+            Now, assuming we have properly set up our hosts and server, the only thing left is to configure the client.
+        </p>
+        <p>
+            In order to automatically use our jumphost when connection to any of the hosts (e.g. <code>Host1</code>,
+            <code>Host2</code>, <code>Host3</code>, ...), we can use the following SSH options:
+        </p>
+        <ul>
+            <li><code>ProxyCommand</code> - allows us to specify a command that connects to the host's TCP port 22 - SSH
+                will use the command's standard input/output instead of creating its own TCP connection</li>
+            <li><code>ServerAliveInterval</code> - tells SSH client to send heartbeat periodically and close the
+                connection if server does not respond - we expect network interruptions</li>
+            <li><code>User</code> - specifies username for specified host</li>
+            <li><code>Hostname</code> - specifies hostname for specified host (since we're using
+                <code>ProxyCommand</code>, this will only serve an aestethic purpose in logs)
+            </li>
+        </ul>
+        <p class="code">
+            <code>
+                Host Host1 Host2 Host3 ...<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;ProxyCommand ssh SERVER nc -U /home/host/%h<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;ServerAliveInterval 10<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;Hostname %h<br>
+                <br>
+                Host Host1<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;User User1<br>
+                <br>
+                Host Host2<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;User User2<br>
+                <br>
+                Host Host3<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;User User3<br>
+                <br>
+                ...<br>
+            </code>
+        </p>
+        <p>
+            <strong>NOTE:</strong> Replace the "SERVER" with your server hostname or address, and "Host1/User1",
+            "Host2/User2", ... with the appropriate Hostname/Username pairs.
+        </p>
+        <p>
+            If everything is configured correctly, we can now connect to our hosts as if they were on a local
+            network:
+        </p>
+        <p class="code">
+            <code>
+                $ ssh Host2<br>
+                The authenticity of host 'Host2 (&lt;no hostip for proxy command&gt;)' can't be established.<br>
+                ECDSA key fingerprint is SHA256:${FINGERPRINT}.<br>
+                Are you sure you want to continue connecting (yes/no/[fingerprint])? yes<br>
+                Warning: Permanently added 'Host2' (ECDSA) to the list of known hosts.<br>
+                User2@Host2's password:<br>
+            </code>
+        </p>
+        <h3>Conclusion</h3>
+        <p>
+            The main idea lies in the UNIX-socket-to-TCP-port-22 forwarding. Since UNIX sockets are files on the
+            filesystem and can have proper filenames, this scheme does not require any port-mapping bookkeeping, and
+            should be able handle thousands of devices without issues, assuming high enough network bandwidth.
+        </p>
+        <p>
+            For reduced host/server configuration in trusted environments, all other hosts can use the same SSH key as
+            the one we previously configured.
+        </p>
+        <p>
+            For reduced client configuration, all hosts can have the same username and have the same common prefix in
+            the hostname (e.g. <code>host-1</code>, <code>host-2</code>, ...), making the client configuration simple:
+        </p>
+        <p class="code">
+            <code>
+                Host host-*<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;ProxyCommand ssh SERVER nc -U /home/host/%h<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;ServerAliveInterval 10<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;Hostname %h<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;User USERNAME
+            </code>
+        </p>
+        <p>
+            For better security, the <code>host</code> user's SSH shell could be disabled by adding the following lines
+            to the <code>/etc/sshd_config</code> file:
+        </p>
+        <p class="code">
+            <code>
+                Match User host<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;ForceCommand /sbin/nologin<br>
+            </code>
+        </p>
+    </div>
+</body>
+
+</html>

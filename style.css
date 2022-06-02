@@ -1,6 +1,6 @@
 body {
     margin: auto;
-    max-width: 900px;
+    max-width: 1000px;
     color: rgb(206, 202, 195);
     background-color: rgb(24, 26, 27);
     line-height: 1.6;
@@ -11,12 +11,26 @@ h1 {
     text-align: center;
 }
 
+.code {
+    font-size: 75%;
+    padding: 10px;
+    background-color: rgb(20, 23, 25);
+}
+
+code {
+    background-color: rgb(20, 23, 25);
+}
+
+svg {
+    max-width: 90%;
+}
+
 .content {
     line-height: 1.6;
     margin: 20px 0 0 0;
     padding: 10px 40px 40px 40px;
     font-family: "Ubuntu";
-    font-size: 22px;
+    font-size: 18px;
     background-color: rgb(50, 50, 50);
 }
 
